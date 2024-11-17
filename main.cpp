@@ -1,148 +1,101 @@
 #include <iostream>
-#include <string>
+#include <vector>
 using namespace std;
-
-// Узел бинарного дерева
 class TreeNode {
 public:
-    int value; // Значение узла
-    TreeNode* left; // Левый потомок
-    TreeNode* right; // Правый потомок
+    int value;
+    TreeNode* left;
+    TreeNode* right;
 
-    // Конструктор узла
     TreeNode(int val) : value(val), left(nullptr), right(nullptr) {}
 };
 
-// Класс бинарного дерева поиска
 class BinarySearchTree {
 public:
-    BinarySearchTree() : root(nullptr) {}
 
-    // Метод вставки элемента
-    string insert(int value) {
-        if (!root) { // Если дерево пустое, создаем корень
-            root = new TreeNode(value);
-            return "DONE";
+    int findPreMax() {
+        TreeNode* node = root;
+        TreeNode* preMax = nullptr;
+
+        // Находим максимальный элемент
+        while (node->right) {
+            preMax = node; // Запоминаем текущий узел как предшественника
+            node = node->right;
         }
-        return insertRecursive(root, value); // Рекурсивная вставка
+
+        // Если у максимального узла есть левое поддерево, находим в нем максимальный элемент
+        if (node->left) {
+            node = node->left;
+            while (node->right) {
+                node = node->right;
+            }
+            return node->value;
+        }
+
+        // Если левого поддерева нет, возвращаем предшественника
+        return preMax->value;
+    }
+    BinarySearchTree() : root(nullptr) {}
+    void insert(int value) {
+        if (root == nullptr) {
+            root = new TreeNode(value);
+        } else {
+            insertRecursive(root, value);
+        }
     }
 
-    // Метод удаления элемента
-    string deleteValue(int value) {
-        if (!root) return "CANNOT"; // Если дерево пустое
-        if (search(value) == "NO") return "CANNOT"; // Если элемента нет в дереве
-        root = deleteRecursive(root, value); // Рекурсивное удаление
-        return "DONE";
-    }
-
-    // Метод поиска элемента
-    string search(int value) const {
-        return searchRecursive(root, value) ? "YES" : "NO";
-    }
-
-    // Метод вывода дерева
-    void printTree() const {
-        printTreeRecursive(root, 0);
+    int height() {
+        return heightRecursive(root);
     }
 
 private:
-    TreeNode* root; // Корень дерева
+    TreeNode* root;
 
-    // Рекурсивный метод вставки
-    string insertRecursive(TreeNode* node, int value) {
-        if (value == node->value) return "ALREADY"; // Элемент уже существует
-        if (value < node->value) { // Идем в левое поддерево
-            if (!node->left) { // Если левого потомка нет
-                node->left = new TreeNode(value);
-                return "DONE";
-            }
-            return insertRecursive(node->left, value);
-        } else { // Идем в правое поддерево
-            if (!node->right) { // Если правого потомка нет
-                node->right = new TreeNode(value);
-                return "DONE";
-            }
-            return insertRecursive(node->right, value);
-        }
-    }
 
-    // Рекурсивный метод удаления
-    TreeNode* deleteRecursive(TreeNode* node, int value) {
-        if (!node) return nullptr;
-
+    void insertRecursive(TreeNode* node, int value) {
         if (value < node->value) {
-            // левая часть
-            node->left = deleteRecursive(node->left, value);
+            if (node->left == nullptr) {
+                node->left = new TreeNode(value);
+            } else {
+                insertRecursive(node->left, value);
+            }
         } else if (value > node->value) {
-            // правая часть
-            node->right = deleteRecursive(node->right, value);
+            if (node->right == nullptr) {
+                node->right = new TreeNode(value);
+            } else {
+                insertRecursive(node->right, value);
+            }
+        }
+    }
+
+    int heightRecursive(TreeNode* node) {
+        if (node == nullptr) {
+            return 0;
         } else {
-            // Найден узел для удаления
-            if (!node->left) {
-                // Если нет левого потомка
-                TreeNode* temp = node->right;
-                delete node;
-                return temp;
-            }
-            if (!node->right) {
-                // Если нет правого потомка
-                TreeNode* temp = node->left;
-                delete node;
-                return temp;
-            }
-
-            // Если у узла два потомка, заменяем его значение на максимальное значение из левого поддерева
-            TreeNode* maxNode = findMax(node->left);
-            node->value = maxNode->value;
-            node->left = deleteRecursive(node->left, maxNode->value); // Удаляем замененный узел
+            int leftHeight = heightRecursive(node->left);
+            int rightHeight = heightRecursive(node->right);
+            return max(leftHeight, rightHeight) + 1;
         }
-        return node;
-    }
-
-    TreeNode* findMax(TreeNode* node) {
-        while (node->right) { // просто берем крайний правый элемент
-            node = node->right;
-        }
-        return node;
-    }
-
-    // Рекурсивный метод поиска элемента
-    bool searchRecursive(TreeNode* node, int value) const {
-        if (!node) return false; // Элемент не найден
-        if (value == node->value) return true; // Элемент найден
-        if (value < node->value) return searchRecursive(node->left, value); // Идем в левое поддерево
-        return searchRecursive(node->right, value); // Идем в правое поддерево
-    }
-
-    // Рекурсивный метод для вывода дерева
-    void printTreeRecursive(TreeNode* node, int level) const {
-        if (!node) return;
-        printTreeRecursive(node->left, level + 1); // Сначала левое поддерево
-        for (int i = 0; i < level; ++i) cout << "."; // Вывод отступов
-        cout << node->value << endl; // Вывод значения узла
-        printTreeRecursive(node->right, level + 1); // Затем правое поддерево
     }
 };
 
 int main() {
-    BinarySearchTree bst; // Создаем дерево
-    string command; // Строка для хранения команды
-    while (cin >> command) { // Читаем команды
-        if (command == "ADD") {
-            int value;
-            cin >> value;
-            cout << bst.insert(value) << endl; // Вставка элемента
-        } else if (command == "DELETE") {
-            int value;
-            cin >> value;
-            cout << bst.deleteValue(value) << endl; // Удаление элемента
-        } else if (command == "SEARCH") {
-            int value;
-            cin >> value;
-            cout << bst.search(value) << endl; // Поиск элемента
-        } else if (command == "PRINTTREE") {
-            bst.printTree(); // Вывод дерева
-        }
+    vector<int> inputSequence;
+    int value;
+    cin >> value;
+    while ( value != 0) {
+        inputSequence.push_back(value);
+        cin >> value;
     }
+
+    BinarySearchTree bst;
+    for (int val : inputSequence) {
+        bst.insert(val);
+    }
+
+    // Вывод высоты дерева
+
+    cout << bst.findPreMax() << endl;
+
     return 0;
 }
